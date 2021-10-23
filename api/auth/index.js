@@ -6,8 +6,13 @@ const jwt = require('jsonwebtoken');
 const secret = 'a_secret_key'; // you need a secret key to sign the token
 
 router.post('/login', doLogin, async (req, res) => {
+
+  /**
+   * expiresIn is how long you want it to expire.
+   * default is an int of seconds but you can use strings like '1h' or '1d'
+   */
   const token = jwt.sign({ username: req.username }, secret, {
-    expiresIn: '1h',
+    expiresIn: 120,
   });
 
   /**
@@ -54,7 +59,12 @@ function verifyToken(req, res, next) {
     return res.status(401).send({error: 'no token present in the header.'})
   }
 
-  const {username} = jwt.decode(token) // this will pull the username from the token
+  const {username, exp} = jwt.decode(token) // this will pull the username from the token
+  
+  if(exp < (Date.now()/1000).toFixed()) {
+    return res.status(401).send({error: 'token is expired'})
+  }
+
   if(!username) {
     return res.status(401).send({error: 'invalid token used for auth'})
   }
